@@ -22,25 +22,22 @@ async def root():
 
 @app.post("/generate")
 async def generate_email(data: EmailRequest):
-    prompt = f"""
-Write a cold email for a freelancer in the {data.industry} industry.
-The offer is: {data.offer}
-Use a {data.tone.lower()} tone.
-Structure: short intro, clear value, strong call to action.
-"""
+    prompt = (
+        f"Write a cold email for a freelancer in the {data.industry} industry.\n"
+        f"The offer is: {data.offer}\n"
+        f"Use a {data.tone.lower()} tone.\n"
+        f"Structure the email with a short introduction, clear value proposition, and a strong call to action."
+    )
 
     try:
         response = client.generate(
-            model="xlarge",
+            model="command-xlarge-nightly",
             prompt=prompt,
             max_tokens=150,
             temperature=0.7,
-            k=0,
-            p=0.75,
-            frequency_penalty=0,
-            presence_penalty=0,
-            stop_sequences=["--"]
+            stop_sequences=["\n\n"]
         )
-        return {"email": response.generations[0].text.strip()}
+        email_text = response.generations[0].text.strip()
+        return {"email": email_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
