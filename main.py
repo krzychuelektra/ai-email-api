@@ -1,18 +1,15 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
-from openai import OpenAI
+import cohere
 
 app = FastAPI()
 
-# API key from environment
-API_KEY = os.environ.get("XAI_API_KEY")
+COHERE_API_KEY = os.environ.get("COHERE_API_KEY")
+if not COHERE_API_KEY:
+    raise Exception("COHERE_API_KEY not found in environment variables")
 
-# xAI client
-client = OpenAI(
-    api_key=API_KEY,
-    base_url="https://api.x.ai/v1"
-)
+client = cohere.Client(COHERE_API_KEY)
 
 class EmailRequest(BaseModel):
     industry: str
@@ -22,22 +19,25 @@ class EmailRequest(BaseModel):
 @app.post("/generate")
 async def generate_email(data: EmailRequest):
     prompt = f"""
-    Write a cold email for a freelancer in the {data.industry} industry.
-    The offer is: {data.offer}
-    Use a {data.tone.lower()} tone.
-    Structure: short intro, clear value, strong call to action.
-    """
+Write a cold email for a freelancer in the {data.industry} industry.
+The offer is: {data.offer}
+Use a {data.tone.lower()} tone.
+Structure: short intro, clear value, strong call to action.
+"""
 
     try:
-        response = client.chat.completions.create(
-            model="grok-beta",
-            messages=[
-                {"role": "system", "content": "You are Grok, a helpful AI assistant."},
-                {"role": "user", "content": prompt}
-            ],
+        response = client.generate(
+            model="xlarge",  # możesz zmienić model, np. "medium"
+            prompt=prompt,
             max_tokens=150,
-            temperature=0.7
+            temperature=0.7,
+            k=0,
+            p=0.75,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stop_sequences=["--"]
         )
-        return {"email": response.choices[0].message.content}
+        return {"email": response.generations[0].text.strip()}
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+
