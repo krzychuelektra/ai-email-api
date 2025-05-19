@@ -16,6 +16,10 @@ class EmailRequest(BaseModel):
     offer: str
     tone: str
 
+@app.get("/")
+async def root():
+    return {"message": "FastAPI Cohere email generator is running!"}
+
 @app.post("/generate")
 async def generate_email(data: EmailRequest):
     prompt = f"""
@@ -27,7 +31,7 @@ Structure: short intro, clear value, strong call to action.
 
     try:
         response = client.generate(
-            model="xlarge",  # możesz zmienić model, np. "medium"
+            model="xlarge",
             prompt=prompt,
             max_tokens=150,
             temperature=0.7,
@@ -40,4 +44,3 @@ Structure: short intro, clear value, strong call to action.
         return {"email": response.generations[0].text.strip()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
