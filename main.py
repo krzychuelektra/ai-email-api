@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
 import cohere
+import traceback
 
 app = FastAPI()
 
@@ -43,4 +44,6 @@ async def generate_email(data: EmailRequest):
         email_text = response.choices[0].message.content.strip()
         return {"email": email_text}
     except Exception as e:
+        error_msg = traceback.format_exc()
+        print(error_msg)  # wypisz pełen błąd do logów Render
         raise HTTPException(status_code=500, detail=str(e))
