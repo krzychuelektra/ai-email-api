@@ -30,14 +30,17 @@ async def generate_email(data: EmailRequest):
     )
 
     try:
-        response = client.generate(
+        response = client.chat.completions.create(
             model="command-xlarge-nightly",
-            prompt=prompt,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant who writes cold emails."},
+                {"role": "user", "content": prompt}
+            ],
             max_tokens=150,
             temperature=0.7,
-            stop_sequences=["\n\n"]
+            stop_sequences=[]
         )
-        email_text = response.generations[0].text.strip()
+        email_text = response.choices[0].message.content.strip()
         return {"email": email_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
